@@ -3,7 +3,7 @@
  * Plugin Name: Yandex Schema.org for WooCommerce
  * Plugin URI: https://uralgips-izhevsk.ru
  * Description: Генерирует микроразметку schema.org для WooCommerce согласно требованиям Яндекса
- * Version: 2.4.0
+ * Version: 2.5.0
  * Author: UralGips
  * Author URI: https://uralgips-izhevsk.ru
  * Text Domain: yandex-schema-woocommerce
@@ -167,13 +167,22 @@ class Yandex_Schema_WooCommerce {
      * Disable WooCommerce default schema
      */
     public function disable_woocommerce_schema() {
-        // Remove WooCommerce structured data
+        // Remove WooCommerce structured data generation hooks
         remove_action( 'woocommerce_single_product_summary', array( WC()->structured_data, 'generate_product_data' ), 60 );
         remove_action( 'woocommerce_shop_loop', array( WC()->structured_data, 'generate_product_data' ), 10 );
         
-        // Disable all WooCommerce structured data output
+        // Disable all WooCommerce structured data via filters
         add_filter( 'woocommerce_structured_data_product', '__return_empty_array' );
         add_filter( 'woocommerce_structured_data_type_for_page', '__return_empty_array' );
+        add_filter( 'woocommerce_structured_data_product_offer', '__return_empty_array' );
+        add_filter( 'woocommerce_structured_data_review', '__return_empty_array' );
+        add_filter( 'woocommerce_structured_data_breadcrumblist', '__return_empty_array' );
+        
+        // Remove JSON-LD output from footer
+        remove_action( 'wp_footer', array( WC()->structured_data, 'output_structured_data' ), 10 );
+        
+        // Disable WooCommerce Open Graph meta tags (if any)
+        add_filter( 'woocommerce_structured_data_context', '__return_empty_array' );
     }
 
     /**
@@ -525,6 +534,7 @@ class Yandex_Schema_WooCommerce {
         $schema = array(
             '@context' => 'https://schema.org',
             '@type' => 'Product',
+            '@id' => $product_url . '#product',
             'name' => $product_name,
             'description' => $product_description,
             'url' => $product_url,
@@ -537,12 +547,34 @@ class Yandex_Schema_WooCommerce {
             $schema['sku'] = $product_sku;
         }
 
-        // Add brand if available (check meta field first, then taxonomy)
+        // Add brand if available (check meta field first, then taxonomy, then attributes)
         $brand = get_post_meta( $product->get_id(), '_brand', true );
         if ( ! $brand ) {
             $brands = wp_get_post_terms( $product->get_id(), 'product_brand', array( 'fields' => 'names' ) );
             if ( ! is_wp_error( $brands ) && ! empty( $brands ) ) {
                 $brand = $brands[0];
+            }
+        }
+        // Also check product attributes for brand (Производитель, Торговая марка, etc.)
+        if ( ! $brand ) {
+            $brand_attr_names = array( 'Производитель', 'Торговая марка', 'Brand', 'Бренд', 'Manufacturer' );
+            foreach ( $product->get_attributes() as $attribute ) {
+                $attr_label = wc_attribute_label( $attribute->get_name(), $product );
+                if ( in_array( $attr_label, $brand_attr_names, true ) ) {
+                    if ( $attribute->is_taxonomy() ) {
+                        $terms = wc_get_product_terms( $product->get_id(), $attribute->get_name(), array( 'fields' => 'names' ) );
+                        if ( ! is_wp_error( $terms ) && ! empty( $terms ) ) {
+                            $brand = $terms[0];
+                            break;
+                        }
+                    } else {
+                        $options = $attribute->get_options();
+                        if ( ! empty( $options ) ) {
+                            $brand = $options[0];
+                            break;
+                        }
+                    }
+                }
             }
         }
         if ( $brand ) {
