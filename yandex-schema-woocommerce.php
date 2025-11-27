@@ -234,11 +234,39 @@ class Yandex_Schema_WooCommerce {
         // Output all schemas
         foreach ( $schema as $item ) {
             if ( ! empty( $item ) ) {
-                echo '<script type="application/ld+json">' . "\n";
-                echo wp_json_encode( $item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT );
-                echo "\n</script>\n";
+                // Clean empty values
+                $item = $this->clean_empty_values( $item );
+                
+                if ( ! empty( $item ) ) {
+                    echo '<script type="application/ld+json">' . "\n";
+                    echo wp_json_encode( $item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT );
+                    echo "\n</script>\n";
+                }
             }
         }
+    }
+
+    /**
+     * Clean empty values from array recursively
+     */
+    private function clean_empty_values( $data ) {
+        if ( ! is_array( $data ) ) {
+            return $data;
+        }
+
+        foreach ( $data as $key => $value ) {
+            if ( is_array( $value ) ) {
+                $data[ $key ] = $this->clean_empty_values( $value );
+            }
+
+            // Remove null, empty strings, empty arrays.
+            // Keep 0, '0', false, true.
+            if ( $data[ $key ] === null || $data[ $key ] === '' || ( is_array( $data[ $key ] ) && empty( $data[ $key ] ) ) ) {
+                unset( $data[ $key ] );
+            }
+        }
+        
+        return $data;
     }
 
     /**
