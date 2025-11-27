@@ -3,7 +3,7 @@
  * Plugin Name: Yandex Schema.org for WooCommerce
  * Plugin URI: https://uralgips-izhevsk.ru
  * Description: Генерирует микроразметку schema.org для WooCommerce согласно требованиям Яндекса
- * Version: 2.5.0
+ * Version: 2.6.0
  * Author: UralGips
  * Author URI: https://uralgips-izhevsk.ru
  * Text Domain: yandex-schema-woocommerce
