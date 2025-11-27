@@ -3,7 +3,7 @@
  * Plugin Name: Yandex Schema.org for WooCommerce
  * Plugin URI: https://uralgips-izhevsk.ru
  * Description: Генерирует микроразметку schema.org для WooCommerce согласно требованиям Яндекса
- * Version: 2.6.1
+ * Version: 2.6.2
  * Author: UralGips
  * Author URI: https://uralgips-izhevsk.ru
  * Text Domain: yandex-schema-woocommerce
@@ -1399,6 +1399,117 @@ class Yandex_Schema_WooCommerce {
      */
     public function clear_all_cache() {
         wp_cache_flush();
+    }
+
+    /**
+     * Render branch fields
+     */
+    public function render_branch_fields( $index, $branch = array() ) {
+        ?>
+        <div class="branch-item">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin: 0;">Филиал #<span class="branch-number"><?php echo is_numeric($index) ? $index + 1 : ''; ?></span></h3>
+                <button type="button" class="button remove-branch" style="color: #a00;">Удалить филиал</button>
+            </div>
+            
+            <table class="form-table" style="margin: 0;">
+                <tr>
+                    <th><label>Название филиала *</label></th>
+                    <td>
+                        <input type="text" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][name]" 
+                               value="<?php echo esc_attr( $branch['name'] ?? '' ); ?>" class="regular-text"
+                               placeholder="Например: УралГипс - Центральный офис">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Телефон</label></th>
+                    <td>
+                        <input type="text" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][phone]" 
+                               value="<?php echo esc_attr( $branch['phone'] ?? '' ); ?>" class="regular-text"
+                               placeholder="+7 (XXX) XXX-XX-XX">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Email</label></th>
+                    <td>
+                        <input type="email" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][email]" 
+                               value="<?php echo esc_attr( $branch['email'] ?? '' ); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Регион</label></th>
+                    <td>
+                        <input type="text" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][region]" 
+                               value="<?php echo esc_attr( $branch['region'] ?? '' ); ?>" class="regular-text"
+                               placeholder="Удмуртская Республика">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Город</label></th>
+                    <td>
+                        <input type="text" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][city]" 
+                               value="<?php echo esc_attr( $branch['city'] ?? '' ); ?>" class="regular-text"
+                               placeholder="Ижевск">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Адрес (улица)</label></th>
+                    <td>
+                        <input type="text" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][street]" 
+                               value="<?php echo esc_attr( $branch['street'] ?? '' ); ?>" class="regular-text"
+                               placeholder="ул. Пушкинская, 268">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Индекс</label></th>
+                    <td>
+                        <input type="text" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][postal]" 
+                               value="<?php echo esc_attr( $branch['postal'] ?? '' ); ?>" class="small-text"
+                               placeholder="426000">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Координаты</label></th>
+                    <td>
+                        <input type="text" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][lat]" 
+                               value="<?php echo esc_attr( $branch['lat'] ?? '' ); ?>" class="small-text" placeholder="Широта">
+                        <input type="text" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][lng]" 
+                               value="<?php echo esc_attr( $branch['lng'] ?? '' ); ?>" class="small-text" placeholder="Долгота">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Часы работы (Пн-Пт)</label></th>
+                    <td>
+                        <input type="time" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][hours_weekday_open]" 
+                               value="<?php echo esc_attr( $branch['hours_weekday_open'] ?? '08:00' ); ?>">
+                        —
+                        <input type="time" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][hours_weekday_close]" 
+                               value="<?php echo esc_attr( $branch['hours_weekday_close'] ?? '18:00' ); ?>">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Часы работы (Сб)</label></th>
+                    <td>
+                        <input type="time" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][hours_saturday_open]" 
+                               value="<?php echo esc_attr( $branch['hours_saturday_open'] ?? '09:00' ); ?>">
+                        —
+                        <input type="time" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][hours_saturday_close]" 
+                               value="<?php echo esc_attr( $branch['hours_saturday_close'] ?? '15:00' ); ?>">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Воскресенье</label></th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="yandex_schema_branches[<?php echo esc_attr( $index ); ?>][hours_sunday_closed]" 
+                                   value="1" <?php checked( $branch['hours_sunday_closed'] ?? true, true ); ?>>
+                            Выходной
+                        </label>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <?php
     }
 
     /**
