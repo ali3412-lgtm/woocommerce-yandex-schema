@@ -139,6 +139,9 @@ class Yandex_Schema_WooCommerce {
             'delivery_price' => 500,
             'delivery_free_from' => 5000,
             'delivery_time' => '1-2 дня',
+            'default_condition' => 'new', // new, used, refurbished, damaged
+            'return_policy_days' => 14,
+            'return_fees' => 'https://schema.org/ReturnFeesCustomerResponsibility', // or FreeReturn
             'enable_cache' => true,
             'cache_time' => 3600,
             'excluded_attributes' => array(),
@@ -148,6 +151,7 @@ class Yandex_Schema_WooCommerce {
             'disable_website' => false,
             'disable_local_business' => false,
             'disable_catalog' => false,
+            'auto_detect_seo' => true,
         );
         $this->options = wp_parse_args( get_option( 'yandex_schema_options', array() ), $defaults );
     }
@@ -557,6 +561,14 @@ class Yandex_Schema_WooCommerce {
 
             // Add shipping details
             $offers['shippingDetails'] = $this->get_shipping_details();
+
+            // Add Return Policy
+            $offers['hasMerchantReturnPolicy'] = $this->get_return_policy_schema();
+
+            // Add priceValidUntil (default to +1 year if not set)
+            if ( ! isset( $offers['priceValidUntil'] ) ) {
+                $offers['priceValidUntil'] = date( 'Y-m-d', strtotime( '+1 year' ) );
+            }
         }
 
         // Build product schema (Yandex requirements)
@@ -567,9 +579,16 @@ class Yandex_Schema_WooCommerce {
             'name' => $product_name,
             'description' => $product_description,
             'url' => $product_url,
-            'image' => count( $images ) === 1 ? $images[0] : $images,
+            'image' => $this->get_image_schema( $images, $product_name ),
             'offers' => $offers
         );
+
+        // Add Item Condition
+        $condition = get_post_meta( $product->get_id(), '_yandex_schema_condition', true );
+        if ( ! $condition ) {
+            $condition = $this->options['default_condition'];
+        }
+        $schema['itemCondition'] = $this->get_condition_url( $condition );
 
         // Add SKU if available
         if ( $product_sku ) {
@@ -893,6 +912,53 @@ class Yandex_Schema_WooCommerce {
         }
 
         return $schema_reviews;
+    }
+
+    /**
+     * Get Item Condition URL
+     */
+    private function get_condition_url( $condition ) {
+        $map = array(
+            'new' => 'https://schema.org/NewCondition',
+            'used' => 'https://schema.org/UsedCondition',
+            'refurbished' => 'https://schema.org/RefurbishedCondition',
+            'damaged' => 'https://schema.org/DamagedCondition'
+        );
+        return $map[ $condition ] ?? 'https://schema.org/NewCondition';
+    }
+
+    /**
+     * Get Return Policy Schema
+     */
+    private function get_return_policy_schema() {
+        return array(
+            '@type' => 'MerchantReturnPolicy',
+            'applicableCountry' => 'RU',
+            'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            'merchantReturnDays' => (int) $this->options['return_policy_days'],
+            'returnMethod' => 'https://schema.org/ReturnByMail',
+            'returnFees' => $this->options['return_fees']
+        );
+    }
+
+    /**
+     * Get Image Schema (ImageObject)
+     */
+    private function get_image_schema( $images, $alt_text ) {
+        if ( empty( $images ) ) {
+            return '';
+        }
+
+        $schema_images = array();
+        foreach ( $images as $url ) {
+            $schema_images[] = array(
+                '@type' => 'ImageObject',
+                'url' => $url,
+                'caption' => $alt_text
+            );
+        }
+
+        return count( $schema_images ) === 1 ? $schema_images[0] : $schema_images;
     }
 
     /**
@@ -1255,45 +1321,65 @@ class Yandex_Schema_WooCommerce {
     }
 
     /**
-     * Add product meta fields (GTIN, MPN)
+     * Add meta fields to product
      */
     public function add_product_meta_fields() {
+        global $post;
+
         echo '<div class="options_group">';
-        echo '<h4 style="padding-left: 12px; margin-bottom: 5px;">Schema.org данные (для Яндекса)</h4>';
-        
+
+        // GTIN
         woocommerce_wp_text_input( array(
-            'id' => '_gtin',
-            'label' => 'GTIN (штрих-код)',
-            'placeholder' => 'Например: 4607001234567',
+            'id' => '_yandex_schema_gtin',
+            'label' => 'GTIN (EAN/UPC)',
+            'description' => 'Global Trade Item Number',
             'desc_tip' => true,
-            'description' => 'Глобальный номер товара (EAN, UPC, ISBN)'
         ) );
-        
+
+        // MPN
         woocommerce_wp_text_input( array(
-            'id' => '_mpn',
-            'label' => 'MPN (артикул производителя)',
-            'placeholder' => 'Например: ABC-12345',
+            'id' => '_yandex_schema_mpn',
+            'label' => 'MPN',
+            'description' => 'Manufacturer Part Number',
             'desc_tip' => true,
-            'description' => 'Код производителя товара'
         ) );
-        
+
+        // Brand
         woocommerce_wp_text_input( array(
-            'id' => '_brand',
+            'id' => '_yandex_schema_brand',
             'label' => 'Бренд',
-            'placeholder' => 'Например: УралГипс',
+            'description' => 'Переопределить бренд (по умолчанию берется из атрибутов)',
             'desc_tip' => true,
-            'description' => 'Бренд или производитель товара'
         ) );
-        
+
+        // Item Condition
+        woocommerce_wp_select( array(
+            'id' => '_yandex_schema_condition',
+            'label' => 'Состояние товара',
+            'description' => 'Переопределить глобальную настройку',
+            'options' => array(
+                '' => 'По умолчанию',
+                'new' => 'New (Новый)',
+                'used' => 'Used (Б/У)',
+                'refurbished' => 'Refurbished (Восстановленный)',
+                'damaged' => 'Damaged (Поврежденный)'
+            )
+        ) );
+
         echo '</div>';
     }
 
     /**
-     * Save product meta fields
+     * Save meta fields
      */
     public function save_product_meta_fields( $post_id ) {
-        $fields = array( '_gtin', '_mpn', '_brand' );
-        
+        $fields = array(
+            '_yandex_schema_gtin',
+            '_yandex_schema_mpn',
+            '_yandex_schema_brand',
+            '_yandex_schema_condition'
+        );
+
         foreach ( $fields as $field ) {
             if ( isset( $_POST[ $field ] ) ) {
                 update_post_meta( $post_id, $field, sanitize_text_field( $_POST[ $field ] ) );
