@@ -181,8 +181,8 @@ class Yandex_Schema_WooCommerce {
         // Remove JSON-LD output from footer
         remove_action( 'wp_footer', array( WC()->structured_data, 'output_structured_data' ), 10 );
         
-        // Disable WooCommerce Open Graph meta tags (if any)
-        add_filter( 'woocommerce_structured_data_context', '__return_empty_array' );
+        // Disable WooCommerce Open Graph meta tags
+        add_filter( 'woocommerce_open_graph_tags', '__return_empty_array' );
     }
 
     /**
