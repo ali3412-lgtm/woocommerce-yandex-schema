@@ -183,6 +183,7 @@ class Yandex_Schema_WooCommerce {
         
         // Disable WooCommerce Open Graph meta tags
         add_filter( 'woocommerce_open_graph_tags', '__return_empty_array' );
+        remove_action( 'wp_head', 'wc_open_graph_tags', 10 );
     }
 
     /**
