@@ -3,7 +3,7 @@
  * Plugin Name: Yandex Schema.org for WooCommerce
  * Plugin URI: https://uralgips-izhevsk.ru
  * Description: Генерирует микроразметку schema.org для WooCommerce согласно требованиям Яндекса
- * Version: 2.6.0
+ * Version: 2.6.1
  * Author: UralGips
  * Author URI: https://uralgips-izhevsk.ru
  * Text Domain: yandex-schema-woocommerce
@@ -1402,568 +1402,256 @@ class Yandex_Schema_WooCommerce {
     }
 
     /**
-     * Settings page HTML
+     * Settings page
      */
     public function settings_page() {
-        $options = $this->options;
         ?>
         <div class="wrap">
-            <h1>Настройки Yandex Schema.org</h1>
+            <h1>Yandex Schema.org for WooCommerce</h1>
             
-            <div class="notice notice-info">
-                <p><strong>Плагин генерирует:</strong> Product, Offer, AggregateOffer, OfferCatalog, Organization, LocalBusiness (+ филиалы с branchOf), WebSite, BreadcrumbList, Review</p>
-            </div>
+            <?php
+            // Auto-detect SEO plugins
+            if ( ! empty( $this->options['auto_detect_seo'] ) ) {
+                $seo_plugins = array();
+                if ( defined( 'WPSEO_VERSION' ) ) $seo_plugins[] = 'Yoast SEO';
+                if ( defined( 'RANK_MATH_VERSION' ) ) $seo_plugins[] = 'Rank Math';
+                
+                if ( ! empty( $seo_plugins ) ) {
+                    echo '<div class="notice notice-info inline"><p>';
+                    echo '<strong>Обнаружены SEO плагины:</strong> ' . implode( ', ', $seo_plugins ) . '. ';
+                    echo 'Убедитесь, что вы отключили генерацию Schema.org в этих плагинах во избежание конфликтов.';
+                    echo '</p></div>';
+                }
+            }
+            ?>
 
-            <div class="notice notice-warning">
-                <p><strong>Проверка:</strong> 
-                    <a href="https://webmaster.yandex.ru/tools/microtest/" target="_blank">Валидатор Яндекса</a> | 
-                    <a href="https://search.google.com/test/rich-results" target="_blank">Google Rich Results</a>
-                </p>
-            </div>
+            <h2 class="nav-tab-wrapper">
+                <a href="#tab-general" class="nav-tab nav-tab-active">Организация</a>
+                <a href="#tab-products" class="nav-tab">Товары</a>
+                <a href="#tab-branches" class="nav-tab">Филиалы</a>
+                <a href="#tab-advanced" class="nav-tab">Дополнительно</a>
+                <a href="#tab-tools" class="nav-tab">Инструменты</a>
+            </h2>
 
             <form method="post" action="options.php">
                 <?php settings_fields( 'yandex_schema_settings' ); ?>
                 
-                <h2>Данные организации</h2>
-                <table class="form-table">
-                    <tr>
-                        <th><label for="org_name">Название компании</label></th>
-                        <td>
-                            <input type="text" id="org_name" name="yandex_schema_options[org_name]" 
-                                   value="<?php echo esc_attr( $options['org_name'] ); ?>" class="regular-text">
-                            <p class="description">По умолчанию: <?php echo esc_html( get_bloginfo( 'name' ) ); ?></p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="org_phone">Телефон</label></th>
-                        <td>
-                            <input type="text" id="org_phone" name="yandex_schema_options[org_phone]" 
-                                   value="<?php echo esc_attr( $options['org_phone'] ); ?>" class="regular-text"
-                                   placeholder="+7 (XXX) XXX-XX-XX">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="org_email">Email</label></th>
-                        <td>
-                            <input type="email" id="org_email" name="yandex_schema_options[org_email]" 
-                                   value="<?php echo esc_attr( $options['org_email'] ); ?>" class="regular-text">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="org_logo">URL логотипа</label></th>
-                        <td>
-                            <input type="url" id="org_logo" name="yandex_schema_options[org_logo]" 
-                                   value="<?php echo esc_attr( $options['org_logo'] ); ?>" class="large-text">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="org_description">Описание компании</label></th>
-                        <td>
-                            <textarea id="org_description" name="yandex_schema_options[org_description]" 
-                                      rows="3" class="large-text"><?php echo esc_textarea( $options['org_description'] ); ?></textarea>
-                        </td>
-                    </tr>
-                </table>
-
-                <h2>Адрес</h2>
-                <table class="form-table">
-                    <tr>
-                        <th><label for="org_region">Регион</label></th>
-                        <td>
-                            <input type="text" id="org_region" name="yandex_schema_options[org_region]" 
-                                   value="<?php echo esc_attr( $options['org_region'] ); ?>" class="regular-text">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="org_city">Город</label></th>
-                        <td>
-                            <input type="text" id="org_city" name="yandex_schema_options[org_city]" 
-                                   value="<?php echo esc_attr( $options['org_city'] ); ?>" class="regular-text">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="org_street">Улица</label></th>
-                        <td>
-                            <input type="text" id="org_street" name="yandex_schema_options[org_street]" 
-                                   value="<?php echo esc_attr( $options['org_street'] ); ?>" class="regular-text">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="org_postal">Индекс</label></th>
-                        <td>
-                            <input type="text" id="org_postal" name="yandex_schema_options[org_postal]" 
-                                   value="<?php echo esc_attr( $options['org_postal'] ); ?>" class="small-text">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label>Координаты</label></th>
-                        <td>
-                            <input type="text" id="org_lat" name="yandex_schema_options[org_lat]" 
-                                   value="<?php echo esc_attr( $options['org_lat'] ); ?>" class="small-text" placeholder="Широта">
-                            <input type="text" id="org_lng" name="yandex_schema_options[org_lng]" 
-                                   value="<?php echo esc_attr( $options['org_lng'] ); ?>" class="small-text" placeholder="Долгота">
-                        </td>
-                    </tr>
-                </table>
-
-                <h2>Доставка</h2>
-                <table class="form-table">
-                    <tr>
-                        <th><label for="delivery_price">Стоимость доставки (₽)</label></th>
-                        <td>
-                            <input type="number" id="delivery_price" name="yandex_schema_options[delivery_price]" 
-                                   value="<?php echo esc_attr( $options['delivery_price'] ); ?>" class="small-text" min="0">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="delivery_free_from">Бесплатно от (₽)</label></th>
-                        <td>
-                            <input type="number" id="delivery_free_from" name="yandex_schema_options[delivery_free_from]" 
-                                   value="<?php echo esc_attr( $options['delivery_free_from'] ); ?>" class="small-text" min="0">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="delivery_time">Срок доставки</label></th>
-                        <td>
-                            <input type="text" id="delivery_time" name="yandex_schema_options[delivery_time]" 
-                                   value="<?php echo esc_attr( $options['delivery_time'] ); ?>" class="regular-text"
-                                   placeholder="1-2 дня">
-                        </td>
-                    </tr>
-                </table>
-
-                <h2>Отключение схем</h2>
-                <p class="description">Отключите схемы, которые уже генерируются другими плагинами (Yoast SEO, RankMath, тема и т.д.).</p>
-                <table class="form-table">
-                    <tr>
-                        <th>Product (товары)</th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="yandex_schema_options[disable_product]" value="1" 
-                                       <?php checked( $options['disable_product'] ?? false, true ); ?>>
-                                Не генерировать разметку Product на страницах товаров
-                            </label>
-                            <p class="description">Отключите, если Yoast SEO или RankMath уже генерируют Product schema.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>BreadcrumbList</th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="yandex_schema_options[disable_breadcrumbs]" value="1" 
-                                       <?php checked( $options['disable_breadcrumbs'] ?? false, true ); ?>>
-                                Не генерировать хлебные крошки
-                            </label>
-                            <p class="description">Отключите, если тема или SEO-плагин уже генерируют BreadcrumbList.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Organization</th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="yandex_schema_options[disable_organization]" value="1" 
-                                       <?php checked( $options['disable_organization'] ?? false, true ); ?>>
-                                Не генерировать разметку организации
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>WebSite</th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="yandex_schema_options[disable_website]" value="1" 
-                                       <?php checked( $options['disable_website'] ?? false, true ); ?>>
-                                Не генерировать разметку WebSite
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>LocalBusiness</th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="yandex_schema_options[disable_local_business]" value="1" 
-                                       <?php checked( $options['disable_local_business'] ?? false, true ); ?>>
-                                Не генерировать LocalBusiness на главной (включая филиалы)
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>OfferCatalog</th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="yandex_schema_options[disable_catalog]" value="1" 
-                                       <?php checked( $options['disable_catalog'] ?? false, true ); ?>>
-                                Не генерировать OfferCatalog на страницах категорий
-                            </label>
-                        </td>
-                    </tr>
-                </table>
-
-                <h2>Кеширование</h2>
-                <table class="form-table">
-                    <tr>
-                        <th><label for="enable_cache">Включить кеш</label></th>
-                        <td>
-                            <input type="checkbox" id="enable_cache" name="yandex_schema_options[enable_cache]" 
-                                   value="1" <?php checked( $options['enable_cache'], true ); ?>>
-                            <label for="enable_cache">Кешировать schema.org разметку</label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="cache_time">Время кеша (сек)</label></th>
-                        <td>
-                            <input type="number" id="cache_time" name="yandex_schema_options[cache_time]" 
-                                   value="<?php echo esc_attr( $options['cache_time'] ); ?>" class="small-text" min="60">
-                        </td>
-                    </tr>
-                </table>
-
-                <h2>Исключаемые атрибуты</h2>
-                <p class="description">Выберите атрибуты товаров, которые НЕ будут включены в Schema.org разметку.</p>
-                
-                <?php
-                $wc_attributes = wc_get_attribute_taxonomies();
-                $excluded = $options['excluded_attributes'] ?? array();
-                
-                if ( ! empty( $wc_attributes ) ) :
-                ?>
-                <div style="margin: 15px 0;">
-                    <input type="text" id="attr-search" placeholder="Поиск атрибутов..." 
-                           style="width: 300px; margin-right: 10px;">
-                    <button type="button" id="select-all-attrs" class="button button-small">Выбрать все</button>
-                    <button type="button" id="deselect-all-attrs" class="button button-small">Снять все</button>
-                    <span id="attr-counter" style="margin-left: 15px; color: #666;">
-                        Выбрано: <strong><?php echo count( $excluded ); ?></strong> из <?php echo count( $wc_attributes ); ?>
-                    </span>
+                <div id="tab-general" class="tab-content">
+                    <table class="form-table">
+                        <tr valign="top">
+                            <th scope="row">Название организации</th>
+                            <td><input type="text" name="yandex_schema_options[organization_name]" value="<?php echo esc_attr( $this->options['organization_name'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">URL сайта</th>
+                            <td><input type="text" name="yandex_schema_options[organization_url]" value="<?php echo esc_attr( $this->options['organization_url'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">URL логотипа</th>
+                            <td><input type="text" name="yandex_schema_options[organization_logo]" value="<?php echo esc_attr( $this->options['organization_logo'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Телефон</th>
+                            <td><input type="text" name="yandex_schema_options[organization_phone]" value="<?php echo esc_attr( $this->options['organization_phone'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Страна</th>
+                            <td><input type="text" name="yandex_schema_options[address_country]" value="<?php echo esc_attr( $this->options['address_country'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Регион (Область)</th>
+                            <td><input type="text" name="yandex_schema_options[address_region]" value="<?php echo esc_attr( $this->options['address_region'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Город</th>
+                            <td><input type="text" name="yandex_schema_options[address_city]" value="<?php echo esc_attr( $this->options['address_city'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Улица, дом</th>
+                            <td><input type="text" name="yandex_schema_options[address_street]" value="<?php echo esc_attr( $this->options['address_street'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Почтовый индекс</th>
+                            <td><input type="text" name="yandex_schema_options[address_postal]" value="<?php echo esc_attr( $this->options['address_postal'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Стоимость доставки (по умолчанию)</th>
+                            <td><input type="number" name="yandex_schema_options[delivery_price]" value="<?php echo esc_attr( $this->options['delivery_price'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Бесплатная доставка от</th>
+                            <td><input type="number" name="yandex_schema_options[delivery_free_from]" value="<?php echo esc_attr( $this->options['delivery_free_from'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Время доставки</th>
+                            <td><input type="text" name="yandex_schema_options[delivery_time]" value="<?php echo esc_attr( $this->options['delivery_time'] ?? '' ); ?>" class="regular-text" /></td>
+                        </tr>
+                    </table>
                 </div>
-                
-                <div id="attributes-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f9f9f9; border-radius: 4px;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 5px;">
-                        <?php foreach ( $wc_attributes as $attribute ) :
-                            $attr_name = wc_attribute_taxonomy_name( $attribute->attribute_name );
-                            $checked = in_array( $attr_name, $excluded, true );
+
+                <div id="tab-products" class="tab-content" style="display:none;">
+                    <table class="form-table">
+                        <tr valign="top">
+                            <th scope="row">Состояние товара (по умолчанию)</th>
+                            <td>
+                                <select name="yandex_schema_options[default_condition]">
+                                    <option value="new" <?php selected( $this->options['default_condition'] ?? 'new', 'new' ); ?>>New (Новый)</option>
+                                    <option value="used" <?php selected( $this->options['default_condition'] ?? 'new', 'used' ); ?>>Used (Б/У)</option>
+                                    <option value="refurbished" <?php selected( $this->options['default_condition'] ?? 'new', 'refurbished' ); ?>>Refurbished (Восстановленный)</option>
+                                    <option value="damaged" <?php selected( $this->options['default_condition'] ?? 'new', 'damaged' ); ?>>Damaged (Поврежденный)</option>
+                                </select>
+                                <p class="description">Можно переопределить в настройках каждого товара.</p>
+                            </td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Срок возврата (дней)</th>
+                            <td><input type="number" name="yandex_schema_options[return_policy_days]" value="<?php echo esc_attr( $this->options['return_policy_days'] ?? 14 ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Кто платит за возврат</th>
+                            <td>
+                                <select name="yandex_schema_options[return_fees]">
+                                    <option value="https://schema.org/ReturnFeesCustomerResponsibility" <?php selected( $this->options['return_fees'] ?? '', 'https://schema.org/ReturnFeesCustomerResponsibility' ); ?>>Покупатель</option>
+                                    <option value="https://schema.org/FreeReturn" <?php selected( $this->options['return_fees'] ?? '', 'https://schema.org/FreeReturn' ); ?>>Продавец (Бесплатно)</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Исключить атрибуты</th>
+                            <td>
+                                <?php
+                                $attributes = wc_get_attribute_taxonomies();
+                                if ( $attributes ) {
+                                    foreach ( $attributes as $attribute ) {
+                                        $checked = in_array( 'pa_' . $attribute->attribute_name, $this->options['excluded_attributes'] ?? array() ) ? 'checked' : '';
+                                        echo '<label><input type="checkbox" name="yandex_schema_options[excluded_attributes][]" value="pa_' . $attribute->attribute_name . '" ' . $checked . '> ' . $attribute->attribute_label . '</label><br>';
+                                    }
+                                } else {
+                                    echo 'Нет глобальных атрибутов.';
+                                }
+                                ?>
+                                <p class="description">Выберите атрибуты, которые НЕ нужно выводить в Schema.org.</p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div id="tab-branches" class="tab-content" style="display:none;">
+                    <h3>Филиалы</h3>
+                    <p class="description">Добавьте дополнительные адреса вашей компании.</p>
+                    <div id="branches-container">
+                        <?php
+                        if ( ! empty( $this->options['branches'] ) ) {
+                            foreach ( $this->options['branches'] as $index => $branch ) {
+                                $this->render_branch_fields( $index, $branch );
+                            }
+                        }
                         ?>
-                        <label class="attr-item" style="display: flex; align-items: center; padding: 5px 8px; background: #fff; border-radius: 3px; cursor: pointer;" 
-                               data-name="<?php echo esc_attr( strtolower( $attribute->attribute_label . ' ' . $attribute->attribute_name . ' ' . $attr_name ) ); ?>">
-                            <input type="checkbox" name="yandex_schema_options[excluded_attributes][]" 
-                                   value="<?php echo esc_attr( $attr_name ); ?>" <?php checked( $checked ); ?>
-                                   style="margin-right: 8px;">
-                            <span style="flex: 1;">
-                                <?php echo esc_html( $attribute->attribute_label ); ?>
-                                <code style="font-size: 10px; color: #999; margin-left: 5px;"><?php echo esc_html( $attr_name ); ?></code>
-                            </span>
-                        </label>
-                        <?php endforeach; ?>
                     </div>
+                    <button type="button" class="button" id="add-branch">Добавить филиал</button>
                 </div>
-                <p class="description" style="margin-top: 10px;">Отмеченные атрибуты будут исключены из additionalProperty и специальных свойств (color, material и т.д.)</p>
-                
-                <script>
-                jQuery(document).ready(function($) {
-                    // Search filter
-                    $('#attr-search').on('input', function() {
-                        var search = $(this).val().toLowerCase();
-                        $('.attr-item').each(function() {
-                            var name = String($(this).attr('data-name') || '').toLowerCase();
-                            $(this).toggle(name.indexOf(search) !== -1);
-                        });
-                    });
-                    
-                    // Select all
-                    $('#select-all-attrs').on('click', function() {
-                        $('.attr-item:visible input[type="checkbox"]').prop('checked', true);
-                        updateCounter();
-                    });
-                    
-                    // Deselect all
-                    $('#deselect-all-attrs').on('click', function() {
-                        $('.attr-item:visible input[type="checkbox"]').prop('checked', false);
-                        updateCounter();
-                    });
-                    
-                    // Update counter
-                    function updateCounter() {
-                        var checked = $('.attr-item input[type="checkbox"]:checked').length;
-                        var total = $('.attr-item').length;
-                        $('#attr-counter strong').text(checked);
-                    }
-                    
-                    $('.attr-item input[type="checkbox"]').on('change', updateCounter);
-                });
-                </script>
-                <?php else : ?>
-                <p style="color: #666; font-style: italic;">Атрибуты WooCommerce не найдены.</p>
-                <?php endif; ?>
 
-                <h2>Филиалы компании</h2>
-                <p class="description">Добавьте филиалы вашей компании. Каждый филиал будет отображаться как отдельный LocalBusiness с привязкой к основной организации (branchOf).</p>
-                
-                <div id="yandex-schema-branches">
-                    <?php 
-                    $branches = $this->branches;
-                    if ( empty( $branches ) ) : 
-                    ?>
-                    <p class="no-branches-message" style="color: #666; font-style: italic;">Филиалы не добавлены. Нажмите "Добавить филиал" для добавления.</p>
-                    <?php 
-                    endif;
-                    foreach ( $branches as $index => $branch ) : 
-                    ?>
-                    <div class="branch-item" style="background: #f9f9f9; padding: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h3 style="margin: 0;">Филиал #<?php echo $index + 1; ?></h3>
-                            <button type="button" class="button remove-branch" style="color: #a00;">Удалить филиал</button>
-                        </div>
-                        
-                        <table class="form-table" style="margin: 0;">
-                            <tr>
-                                <th><label>Название филиала *</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[<?php echo $index; ?>][name]" 
-                                           value="<?php echo esc_attr( $branch['name'] ?? '' ); ?>" class="regular-text"
-                                           placeholder="Например: УралГипс - Центральный офис">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Телефон</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[<?php echo $index; ?>][phone]" 
-                                           value="<?php echo esc_attr( $branch['phone'] ?? '' ); ?>" class="regular-text"
-                                           placeholder="+7 (XXX) XXX-XX-XX">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Email</label></th>
-                                <td>
-                                    <input type="email" name="yandex_schema_branches[<?php echo $index; ?>][email]" 
-                                           value="<?php echo esc_attr( $branch['email'] ?? '' ); ?>" class="regular-text">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Регион</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[<?php echo $index; ?>][region]" 
-                                           value="<?php echo esc_attr( $branch['region'] ?? '' ); ?>" class="regular-text"
-                                           placeholder="Удмуртская Республика">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Город</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[<?php echo $index; ?>][city]" 
-                                           value="<?php echo esc_attr( $branch['city'] ?? '' ); ?>" class="regular-text"
-                                           placeholder="Ижевск">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Адрес (улица)</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[<?php echo $index; ?>][street]" 
-                                           value="<?php echo esc_attr( $branch['street'] ?? '' ); ?>" class="regular-text"
-                                           placeholder="ул. Пушкинская, 268">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Индекс</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[<?php echo $index; ?>][postal]" 
-                                           value="<?php echo esc_attr( $branch['postal'] ?? '' ); ?>" class="small-text"
-                                           placeholder="426000">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Координаты</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[<?php echo $index; ?>][lat]" 
-                                           value="<?php echo esc_attr( $branch['lat'] ?? '' ); ?>" class="small-text" placeholder="Широта">
-                                    <input type="text" name="yandex_schema_branches[<?php echo $index; ?>][lng]" 
-                                           value="<?php echo esc_attr( $branch['lng'] ?? '' ); ?>" class="small-text" placeholder="Долгота">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Часы работы (Пн-Пт)</label></th>
-                                <td>
-                                    <input type="time" name="yandex_schema_branches[<?php echo $index; ?>][hours_weekday_open]" 
-                                           value="<?php echo esc_attr( $branch['hours_weekday_open'] ?? '08:00' ); ?>">
-                                    —
-                                    <input type="time" name="yandex_schema_branches[<?php echo $index; ?>][hours_weekday_close]" 
-                                           value="<?php echo esc_attr( $branch['hours_weekday_close'] ?? '18:00' ); ?>">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Часы работы (Сб)</label></th>
-                                <td>
-                                    <input type="time" name="yandex_schema_branches[<?php echo $index; ?>][hours_saturday_open]" 
-                                           value="<?php echo esc_attr( $branch['hours_saturday_open'] ?? '09:00' ); ?>">
-                                    —
-                                    <input type="time" name="yandex_schema_branches[<?php echo $index; ?>][hours_saturday_close]" 
-                                           value="<?php echo esc_attr( $branch['hours_saturday_close'] ?? '15:00' ); ?>">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Воскресенье</label></th>
-                                <td>
-                                    <label>
-                                        <input type="checkbox" name="yandex_schema_branches[<?php echo $index; ?>][hours_sunday_closed]" 
-                                               value="1" <?php checked( $branch['hours_sunday_closed'] ?? true, true ); ?>>
-                                        Выходной
-                                    </label>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    <?php endforeach; ?>
+                <div id="tab-advanced" class="tab-content" style="display:none;">
+                    <table class="form-table">
+                        <tr valign="top">
+                            <th scope="row">Включить кеширование</th>
+                            <td><input type="checkbox" name="yandex_schema_options[enable_cache]" value="1" <?php checked( $this->options['enable_cache'] ?? false, 1 ); ?> /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Время жизни кеша (сек)</th>
+                            <td><input type="number" name="yandex_schema_options[cache_time]" value="<?php echo esc_attr( $this->options['cache_time'] ?? 3600 ); ?>" class="regular-text" /></td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Авто-детект SEO плагинов</th>
+                            <td>
+                                <input type="checkbox" name="yandex_schema_options[auto_detect_seo]" value="1" <?php checked( $this->options['auto_detect_seo'] ?? true, 1 ); ?> />
+                                <p class="description">Показывать уведомления о конфликтах с Yoast/RankMath.</p>
+                            </td>
+                        </tr>
+                        <tr valign="top">
+                            <th scope="row">Отключить Schema</th>
+                            <td>
+                                <label><input type="checkbox" name="yandex_schema_options[disable_organization]" value="1" <?php checked( $this->options['disable_organization'] ?? false, 1 ); ?> /> Organization</label><br>
+                                <label><input type="checkbox" name="yandex_schema_options[disable_website]" value="1" <?php checked( $this->options['disable_website'] ?? false, 1 ); ?> /> WebSite</label><br>
+                                <label><input type="checkbox" name="yandex_schema_options[disable_breadcrumbs]" value="1" <?php checked( $this->options['disable_breadcrumbs'] ?? false, 1 ); ?> /> BreadcrumbList</label><br>
+                                <label><input type="checkbox" name="yandex_schema_options[disable_product]" value="1" <?php checked( $this->options['disable_product'] ?? false, 1 ); ?> /> Product</label><br>
+                                <label><input type="checkbox" name="yandex_schema_options[disable_local_business]" value="1" <?php checked( $this->options['disable_local_business'] ?? false, 1 ); ?> /> LocalBusiness</label><br>
+                                <label><input type="checkbox" name="yandex_schema_options[disable_catalog]" value="1" <?php checked( $this->options['disable_catalog'] ?? false, 1 ); ?> /> OfferCatalog (Categories)</label>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                
-                <button type="button" id="add-branch" class="button button-secondary">+ Добавить филиал</button>
 
-                <?php submit_button( 'Сохранить настройки' ); ?>
+                <div id="tab-tools" class="tab-content" style="display:none;">
+                    <h3>Инструменты валидации</h3>
+                    <p>
+                        <a href="https://search.google.com/test/rich-results?url=<?php echo home_url(); ?>" target="_blank" class="button button-primary">Проверить в Google Rich Results</a>
+                        <a href="https://webmaster.yandex.ru/tools/microtest/?url=<?php echo home_url(); ?>" target="_blank" class="button button-secondary">Проверить в Яндекс.Вебмастер</a>
+                    </p>
+                    
+                    <h3>Предпросмотр JSON-LD</h3>
+                    <p>Здесь показан пример разметки для последнего добавленного товара.</p>
+                    <textarea style="width:100%; height:300px; font-family:monospace;" readonly><?php
+                        $latest_product = wc_get_products( array( 'limit' => 1, 'orderby' => 'date', 'order' => 'DESC' ) );
+                        if ( ! empty( $latest_product ) ) {
+                            $product = $latest_product[0];
+                            // Mocking the environment for get_product_schema
+                            global $post;
+                            $post = get_post( $product->get_id() );
+                            setup_postdata( $post );
+                            
+                            $schema = $this->get_product_schema();
+                            $schema = $this->clean_empty_values( $schema );
+                            
+                            echo wp_json_encode( $schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT );
+                            
+                            wp_reset_postdata();
+                        } else {
+                            echo 'Товары не найдены.';
+                        }
+                    ?></textarea>
+                </div>
+
+                <?php submit_button(); ?>
             </form>
-            
-            <script>
-            jQuery(document).ready(function($) {
-                var branchIndex = <?php echo count( $branches ); ?>;
-                
-                // Add new branch
-                $('#add-branch').on('click', function() {
-                    // Hide "no branches" message
-                    $('.no-branches-message').remove();
-                    
-                    var template = `
-                    <div class="branch-item" style="background: #f9f9f9; padding: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h3 style="margin: 0;">Филиал #${branchIndex + 1}</h3>
-                            <button type="button" class="button remove-branch" style="color: #a00;">Удалить филиал</button>
-                        </div>
-                        
-                        <table class="form-table" style="margin: 0;">
-                            <tr>
-                                <th><label>Название филиала *</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[${branchIndex}][name]" 
-                                           value="" class="regular-text"
-                                           placeholder="Например: УралГипс - Центральный офис">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Телефон</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[${branchIndex}][phone]" 
-                                           value="" class="regular-text"
-                                           placeholder="+7 (XXX) XXX-XX-XX">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Email</label></th>
-                                <td>
-                                    <input type="email" name="yandex_schema_branches[${branchIndex}][email]" 
-                                           value="" class="regular-text">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Регион</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[${branchIndex}][region]" 
-                                           value="" class="regular-text"
-                                           placeholder="Удмуртская Республика">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Город</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[${branchIndex}][city]" 
-                                           value="" class="regular-text"
-                                           placeholder="Ижевск">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Адрес (улица)</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[${branchIndex}][street]" 
-                                           value="" class="regular-text"
-                                           placeholder="ул. Пушкинская, 268">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Индекс</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[${branchIndex}][postal]" 
-                                           value="" class="small-text"
-                                           placeholder="426000">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Координаты</label></th>
-                                <td>
-                                    <input type="text" name="yandex_schema_branches[${branchIndex}][lat]" 
-                                           value="" class="small-text" placeholder="Широта">
-                                    <input type="text" name="yandex_schema_branches[${branchIndex}][lng]" 
-                                           value="" class="small-text" placeholder="Долгота">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Часы работы (Пн-Пт)</label></th>
-                                <td>
-                                    <input type="time" name="yandex_schema_branches[${branchIndex}][hours_weekday_open]" 
-                                           value="08:00">
-                                    —
-                                    <input type="time" name="yandex_schema_branches[${branchIndex}][hours_weekday_close]" 
-                                           value="18:00">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Часы работы (Сб)</label></th>
-                                <td>
-                                    <input type="time" name="yandex_schema_branches[${branchIndex}][hours_saturday_open]" 
-                                           value="09:00">
-                                    —
-                                    <input type="time" name="yandex_schema_branches[${branchIndex}][hours_saturday_close]" 
-                                           value="15:00">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label>Воскресенье</label></th>
-                                <td>
-                                    <label>
-                                        <input type="checkbox" name="yandex_schema_branches[${branchIndex}][hours_sunday_closed]" 
-                                               value="1" checked>
-                                        Выходной
-                                    </label>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>`;
-                    
-                    $('#yandex-schema-branches').append(template);
-                    branchIndex++;
-                    updateBranchNumbers();
-                });
-                
-                // Remove branch
-                $(document).on('click', '.remove-branch', function() {
-                    $(this).closest('.branch-item').remove();
-                    updateBranchNumbers();
-                });
-                
-                // Update branch numbers
-                function updateBranchNumbers() {
-                    $('.branch-item').each(function(index) {
-                        $(this).find('h3').text('Филиал #' + (index + 1));
-                    });
-                }
-            });
-            </script>
-
-            <hr>
-            <h2>Мета-поля товаров</h2>
-            <p>В редакторе каждого товара WooCommerce добавлены поля:</p>
-            <ul style="list-style: disc; margin-left: 20px;">
-                <li><strong>GTIN</strong> — штрих-код товара (EAN, UPC)</li>
-                <li><strong>MPN</strong> — артикул производителя</li>
-                <li><strong>Бренд</strong> — название бренда</li>
-            </ul>
         </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Tabs
+            $('.nav-tab-wrapper a').click(function(e) {
+                e.preventDefault();
+                $('.nav-tab-wrapper a').removeClass('nav-tab-active');
+                $(this).addClass('nav-tab-active');
+                $('.tab-content').hide();
+                $($(this).attr('href')).show();
+            });
+
+            // Branches
+            var branchIndex = <?php echo !empty($this->options['branches']) ? count($this->options['branches']) : 0; ?>;
+            $('#add-branch').click(function() {
+                var template = `<?php 
+                    ob_start();
+                    $this->render_branch_fields('INDEX', array('address' => array(), 'phone' => ''));
+                    $html = ob_get_clean();
+                    echo str_replace(array("\r", "\n"), '', $html); 
+                ?>`;
+                $('#branches-container').append(template.replace(/INDEX/g, branchIndex));
+                branchIndex++;
+            });
+
+            $(document).on('click', '.remove-branch', function() {
+                $(this).closest('.branch-item').remove();
+            });
+        });
+        </script>
+        <style>
+            .branch-item { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; background: #fff; }
+            .branch-item h4 { margin-top: 0; }
+        </style>
         <?php
     }
+
 }
 
 // Initialize plugin
