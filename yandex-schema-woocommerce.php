@@ -3,7 +3,7 @@
  * Plugin Name: Yandex Schema.org for WooCommerce
  * Plugin URI: https://uralgips-izhevsk.ru
  * Description: Генерирует микроразметку schema.org для WooCommerce согласно требованиям Яндекса
- * Version: 2.3.0
+ * Version: 2.4.0
  * Author: UralGips
  * Author URI: https://uralgips-izhevsk.ru
  * Text Domain: yandex-schema-woocommerce
@@ -142,6 +142,12 @@ class Yandex_Schema_WooCommerce {
             'enable_cache' => true,
             'cache_time' => 3600,
             'excluded_attributes' => array(),
+            'disable_breadcrumbs' => false,
+            'disable_product' => false,
+            'disable_organization' => false,
+            'disable_website' => false,
+            'disable_local_business' => false,
+            'disable_catalog' => false,
         );
         $this->options = wp_parse_args( get_option( 'yandex_schema_options', array() ), $defaults );
     }
@@ -176,32 +182,36 @@ class Yandex_Schema_WooCommerce {
     public function output_schema() {
         $schema = array();
 
-        // Always add Organization
-        $schema[] = $this->get_organization_schema();
+        // Organization (if not disabled)
+        if ( empty( $this->options['disable_organization'] ) ) {
+            $schema[] = $this->get_organization_schema();
+        }
 
-        // Always add WebSite
-        $schema[] = $this->get_website_schema();
+        // WebSite (if not disabled)
+        if ( empty( $this->options['disable_website'] ) ) {
+            $schema[] = $this->get_website_schema();
+        }
 
-        // Add BreadcrumbList
-        if ( ! is_front_page() ) {
+        // BreadcrumbList (if not disabled)
+        if ( ! is_front_page() && empty( $this->options['disable_breadcrumbs'] ) ) {
             $breadcrumb = $this->get_breadcrumb_schema();
             if ( $breadcrumb ) {
                 $schema[] = $breadcrumb;
             }
         }
 
-        // Product page
-        if ( is_product() ) {
+        // Product page (if not disabled)
+        if ( is_product() && empty( $this->options['disable_product'] ) ) {
             $schema[] = $this->get_product_schema();
         }
 
-        // Shop/Category page - OfferCatalog
-        if ( is_shop() || is_product_category() || is_product_tag() ) {
+        // Shop/Category page - OfferCatalog (if not disabled)
+        if ( ( is_shop() || is_product_category() || is_product_tag() ) && empty( $this->options['disable_catalog'] ) ) {
             $schema[] = $this->get_catalog_schema();
         }
 
-        // Front page - LocalBusiness + Branches
-        if ( is_front_page() ) {
+        // Front page - LocalBusiness + Branches (if not disabled)
+        if ( is_front_page() && empty( $this->options['disable_local_business'] ) ) {
             $schema[] = $this->get_local_business_schema();
             
             // Add branches as separate LocalBusiness entities
@@ -1128,6 +1138,14 @@ class Yandex_Schema_WooCommerce {
         $sanitized['enable_cache'] = isset( $input['enable_cache'] ) ? (bool) $input['enable_cache'] : false;
         $sanitized['cache_time'] = isset( $input['cache_time'] ) ? absint( $input['cache_time'] ) : 3600;
         
+        // Sanitize schema disable options
+        $sanitized['disable_breadcrumbs'] = isset( $input['disable_breadcrumbs'] ) ? (bool) $input['disable_breadcrumbs'] : false;
+        $sanitized['disable_product'] = isset( $input['disable_product'] ) ? (bool) $input['disable_product'] : false;
+        $sanitized['disable_organization'] = isset( $input['disable_organization'] ) ? (bool) $input['disable_organization'] : false;
+        $sanitized['disable_website'] = isset( $input['disable_website'] ) ? (bool) $input['disable_website'] : false;
+        $sanitized['disable_local_business'] = isset( $input['disable_local_business'] ) ? (bool) $input['disable_local_business'] : false;
+        $sanitized['disable_catalog'] = isset( $input['disable_catalog'] ) ? (bool) $input['disable_catalog'] : false;
+        
         // Sanitize excluded attributes
         $sanitized['excluded_attributes'] = array();
         if ( isset( $input['excluded_attributes'] ) && is_array( $input['excluded_attributes'] ) ) {
@@ -1363,6 +1381,73 @@ class Yandex_Schema_WooCommerce {
                             <input type="text" id="delivery_time" name="yandex_schema_options[delivery_time]" 
                                    value="<?php echo esc_attr( $options['delivery_time'] ); ?>" class="regular-text"
                                    placeholder="1-2 дня">
+                        </td>
+                    </tr>
+                </table>
+
+                <h2>Отключение схем</h2>
+                <p class="description">Отключите схемы, которые уже генерируются другими плагинами (Yoast SEO, RankMath, тема и т.д.).</p>
+                <table class="form-table">
+                    <tr>
+                        <th>Product (товары)</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="yandex_schema_options[disable_product]" value="1" 
+                                       <?php checked( $options['disable_product'] ?? false, true ); ?>>
+                                Не генерировать разметку Product на страницах товаров
+                            </label>
+                            <p class="description">Отключите, если Yoast SEO или RankMath уже генерируют Product schema.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>BreadcrumbList</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="yandex_schema_options[disable_breadcrumbs]" value="1" 
+                                       <?php checked( $options['disable_breadcrumbs'] ?? false, true ); ?>>
+                                Не генерировать хлебные крошки
+                            </label>
+                            <p class="description">Отключите, если тема или SEO-плагин уже генерируют BreadcrumbList.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Organization</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="yandex_schema_options[disable_organization]" value="1" 
+                                       <?php checked( $options['disable_organization'] ?? false, true ); ?>>
+                                Не генерировать разметку организации
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>WebSite</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="yandex_schema_options[disable_website]" value="1" 
+                                       <?php checked( $options['disable_website'] ?? false, true ); ?>>
+                                Не генерировать разметку WebSite
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>LocalBusiness</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="yandex_schema_options[disable_local_business]" value="1" 
+                                       <?php checked( $options['disable_local_business'] ?? false, true ); ?>>
+                                Не генерировать LocalBusiness на главной (включая филиалы)
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>OfferCatalog</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="yandex_schema_options[disable_catalog]" value="1" 
+                                       <?php checked( $options['disable_catalog'] ?? false, true ); ?>>
+                                Не генерировать OfferCatalog на страницах категорий
+                            </label>
                         </td>
                     </tr>
                 </table>
