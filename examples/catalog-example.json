@@ -1,0 +1,43 @@
+{
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    "name": "Штукатурки",
+    "description": "Гипсовые и цементные штукатурки для внутренних и наружных работ",
+    "image": "https://uralgips-izhevsk.ru/wp-content/uploads/2024/01/category-shtukaturki.jpg",
+    "numberOfItems": 3,
+    "itemListElement": [
+        {
+            "@type": "Offer",
+            "position": 1,
+            "url": "https://uralgips-izhevsk.ru/product/shtukaturka-uralgips-plast-30kg/",
+            "name": "Штукатурка гипсовая УралГипс Пласт 30 кг",
+            "description": "Гипсовая штукатурка для внутренних работ",
+            "image": "https://uralgips-izhevsk.ru/wp-content/uploads/2024/01/plast-30.jpg",
+            "price": 450,
+            "priceCurrency": "RUB",
+            "availability": "https://schema.org/InStock"
+        },
+        {
+            "@type": "Offer",
+            "position": 2,
+            "url": "https://uralgips-izhevsk.ru/product/shtukaturka-uralgips-optima-25kg/",
+            "name": "Штукатурка гипсовая УралГипс Оптима 25 кг",
+            "description": "Универсальная гипсовая штукатурка",
+            "image": "https://uralgips-izhevsk.ru/wp-content/uploads/2024/01/optima-25.jpg",
+            "price": 320,
+            "priceCurrency": "RUB",
+            "availability": "https://schema.org/InStock"
+        },
+        {
+            "@type": "Offer",
+            "position": 3,
+            "url": "https://uralgips-izhevsk.ru/product/shtukaturka-uralgips-fasad-25kg/",
+            "name": "Штукатурка фасадная УралГипс Фасад 25 кг",
+            "description": "Цементная штукатурка для наружных работ",
+            "image": "https://uralgips-izhevsk.ru/wp-content/uploads/2024/01/fasad-25.jpg",
+            "price": 280,
+            "priceCurrency": "RUB",
+            "availability": "https://schema.org/OutOfStock"
+        }
+    ]
+}

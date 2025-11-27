@@ -1,0 +1,24 @@
+{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "УралГипс Ижевск",
+    "url": "https://uralgips-izhevsk.ru",
+    "logo": {
+        "@type": "ImageObject",
+        "url": "https://uralgips-izhevsk.ru/wp-content/themes/uralgips-premium/assets/images/logo.png"
+    },
+    "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+7 (3412) 00-00-00",
+        "contactType": "sales",
+        "availableLanguage": "Russian"
+    },
+    "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "RU",
+        "addressRegion": "Удмуртская Республика",
+        "addressLocality": "Ижевск",
+        "streetAddress": "ул. Пушкинская, 268",
+        "postalCode": "426000"
+    }
+}
